@@ -123,7 +123,7 @@ void Setup::load (int* videoW, int* videoH, bool* fullscreen, int* videoScale) {
 
 	// Read controls
 	for (count = 0; count < CONTROLS - 4; count++)
-		controls.setKey(count, (SDLKey)(file->loadInt()));
+		controls.setKey(count, (SDL_Keycode)(file->loadInt()));
 
 	for (count = 0; count < CONTROLS; count++)
 		controls.setButton(count, file->loadInt());

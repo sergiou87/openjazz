@@ -24,6 +24,7 @@ riscos/\!OpenJazz/openjazz.000
 *,e1f
 
 .DS_Store
+.vscode
 
 # autotools
 /build-aux/

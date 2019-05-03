@@ -86,6 +86,14 @@
 	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_SWSURFACE | SDL_HWPALETTE)
+#elif defined(__SWITCH__)
+	#define DEFAULT_SCREEN_WIDTH 640
+	#define DEFAULT_SCREEN_HEIGHT 480
+
+	#define FULLSCREEN_ONLY
+	#define NO_RESIZE
+
+	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_SWSURFACE | SDL_HWPALETTE)
 #else
 	#define DEFAULT_SCREEN_WIDTH SW
 	#define DEFAULT_SCREEN_HEIGHT SH
@@ -103,7 +111,10 @@
 class Video {
 
 	private:
+		SDL_Window* window; ///< Window
+		SDL_Renderer* renderer; ///< Renderer
 		SDL_Surface* screen; ///< Output surface
+		SDL_Texture* texture; ///< Output texture
 
 		// Palettes
 		SDL_Color*   currentPalette; ///< Current palette

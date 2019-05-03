@@ -113,9 +113,9 @@ MainMenu::MainMenu () {
 
 	}
 
-	SDL_SetColorKey(background, SDL_SRCCOLORKEY, 0);
-	SDL_SetColorKey(highlight, SDL_SRCCOLORKEY, 0);
-	SDL_SetColorKey(logo, SDL_SRCCOLORKEY, 28);
+	SDL_SetColorKey(background, SDL_TRUE, 0);
+	SDL_SetColorKey(highlight, SDL_TRUE, 0);
+	SDL_SetColorKey(logo, SDL_TRUE, 28);
 
 	gameMenu = new GameMenu(file);
 

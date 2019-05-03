@@ -51,7 +51,7 @@ SDL_Surface* createSurface (unsigned char * pixels, int width, int height) {
 	int y;
 
 	// Create the surface
-	ret = SDL_CreateRGBSurface(SDL_HWSURFACE, width, height, 8, 0, 0, 0, 0);
+	ret = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
 
 	// Set the surface's palette
 	video.restoreSurfacePalette(ret);
@@ -152,7 +152,23 @@ bool Video::init (int width, int height, bool startFullscreen) {
 
 	fullscreen = startFullscreen;
 
-	if (fullscreen) SDL_ShowCursor(SDL_DISABLE);
+	Uint32 windowFlags = SDL_WINDOW_OPENGL;
+
+	if (fullscreen) {
+		windowFlags |= SDL_WINDOW_FULLSCREEN;
+		SDL_ShowCursor(SDL_DISABLE);
+	}
+
+	int windowWidth = fullscreen ? 0 : width;
+	int windowHeight = fullscreen ? 0 : height;
+
+	window = SDL_CreateWindow("OpenJazz",
+														SDL_WINDOWPOS_UNDEFINED,
+														SDL_WINDOWPOS_UNDEFINED,
+														windowWidth, windowHeight,
+														windowFlags);
+
+	renderer = SDL_CreateRenderer(window, -1, 0);
 
 	if (!reset(width, height)) {
 
@@ -161,8 +177,6 @@ bool Video::init (int width, int height, bool startFullscreen) {
 		return false;
 
 	}
-
-	SDL_WM_SetCaption("OpenJazz", NULL);
 
 	findMaxResolution();
 
@@ -188,11 +202,19 @@ bool Video::reset (int width, int height) {
 	if (canvas != screen) SDL_FreeSurface(canvas);
 #endif
 
-#ifdef NO_RESIZE
-	screen = SDL_SetVideoMode(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 8, FULLSCREEN_FLAGS);
-#else
-	screen = SDL_SetVideoMode(screenW, screenH, 8, fullscreen? FULLSCREEN_FLAGS: WINDOWED_FLAGS);
-#endif
+	screen = SDL_CreateRGBSurface(0, width, height, 32,
+                                        0x00FF0000,
+                                        0x0000FF00,
+                                        0x000000FF,
+                                        0xFF000000);
+
+	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+	
+// #ifdef NO_RESIZE
+// 	screen = SDL_SetVideoMode(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 8, FULLSCREEN_FLAGS);
+// #else
+// 	screen = SDL_SetVideoMode(screenW, screenH, 8, fullscreen? FULLSCREEN_FLAGS: WINDOWED_FLAGS);
+// #endif
 
 	if (!screen) return false;
 
@@ -253,7 +275,7 @@ void Video::setPalette (SDL_Color *palette) {
 	clearScreen(SDL_MapRGB(screen->format, 0, 0, 0));
 	flip(0);
 
-	SDL_SetPalette(screen, SDL_PHYSPAL, palette, 0, 256);
+	SDL_SetPaletteColors(screen->format->palette, palette, 0, 256);
 	currentPalette = palette;
 
 	return;
@@ -282,7 +304,7 @@ SDL_Color* Video::getPalette () {
  */
 void Video::changePalette (SDL_Color *palette, unsigned char first, unsigned int amount) {
 
-	SDL_SetPalette(screen, SDL_PHYSPAL, palette, first, amount);
+	SDL_SetPaletteColors(screen->format->palette, palette, first, amount);
 
 	return;
 
@@ -296,7 +318,7 @@ void Video::changePalette (SDL_Color *palette, unsigned char first, unsigned int
  */
 void Video::restoreSurfacePalette (SDL_Surface* surface) {
 
-	SDL_SetPalette(surface, SDL_LOGPAL, logicalPalette, 0, 256);
+	SDL_SetPaletteColors(surface->format->palette, logicalPalette, 0, 256);
 
 	return;
 
@@ -403,8 +425,8 @@ bool Video::isFullscreen () {
  */
 void Video::expose () {
 
-	SDL_SetPalette(screen, SDL_LOGPAL, logicalPalette, 0, 256);
-	SDL_SetPalette(screen, SDL_PHYSPAL, currentPalette, 0, 256);
+	SDL_SetPaletteColors(screen->format->palette, logicalPalette, 0, 256); // Logical
+	SDL_SetPaletteColors(screen->format->palette, currentPalette, 0, 256); // Physical
 
 	return;
 
@@ -451,11 +473,11 @@ void Video::update (SDL_Event *event) {
 			break;
     #endif
 
-		case SDL_VIDEOEXPOSE:
+		// case SDL_VIDEOEXPOSE:
 
-			expose();
+		// 	expose();
 
-			break;
+		// 	break;
 
 	}
 #endif
@@ -502,7 +524,7 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 
 			paletteEffects->apply(shownPalette, false, mspf, effectsStopped);
 
-			SDL_SetPalette(screen, SDL_PHYSPAL, shownPalette, 0, 256);
+			SDL_SetPaletteColors(screen->format->palette, shownPalette, 0, 256);
 
 		} else {
 
@@ -513,7 +535,37 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 	}
 
 	// Show what has been drawn
-	SDL_Flip(screen);
+	SDL_UpdateTexture(texture, NULL, screen->pixels, screen->w * sizeof (Uint32));
+
+	SDL_RenderClear(renderer);
+
+	int windowWidth, windowHeight;
+	SDL_GetRendererOutputSize(renderer, &windowWidth, &windowHeight);
+	float textureAspectRatio = 640.0f / 480.0f;// (float)video_state.w / video_state.h;
+	float screenAspectRatio = (float)windowWidth / windowHeight;
+
+	SDL_Rect dstRect;
+
+	if (textureAspectRatio > screenAspectRatio) {
+			dstRect.x = 0;
+			dstRect.w = windowWidth;
+			dstRect.h = dstRect.w / textureAspectRatio;
+			dstRect.y = (windowHeight - dstRect.h) >> 1;
+	}
+	else {
+			dstRect.y = 0;
+			dstRect.h = windowHeight;
+			dstRect.w = dstRect.h * textureAspectRatio;
+			dstRect.x = (windowWidth - dstRect.w) >> 1;
+	}
+
+	// video_state.viewportX = dstRect.x;
+	// video_state.viewportY = dstRect.y;
+	// video_state.viewportWidth = dstRect.w;
+	// video_state.viewportHeight = dstRect.h;
+
+	SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+	SDL_RenderPresent(renderer);
 
 	return;
 
