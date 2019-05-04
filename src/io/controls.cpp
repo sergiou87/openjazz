@@ -704,15 +704,8 @@ bool Controls::release (int control) {
  */
 bool Controls::getCursor (int& x, int& y) {
 
-#ifdef SCALE
-	int scaleFactor = video.getScaleFactor();
-
-	x = cursorX / scaleFactor;
-	y = cursorY / scaleFactor;
-#else
 	x = cursorX;
 	y = cursorY;
-#endif
 
 	return cursorPressed || cursorReleased;
 

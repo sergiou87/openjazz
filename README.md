@@ -83,7 +83,6 @@ http://www.alister.eu/jazz/oj/build.php
 
 - `DATAPATH` - use a fixed path for data files
 - `HOMEDIR` - use the user's home directory for data files
-- `SCALE` - enable scaling of the video output (i.e. Scale2X...)
 - `FULLSCREEN_ONLY` - disable window mode, useful for console ports
 
 ## Running

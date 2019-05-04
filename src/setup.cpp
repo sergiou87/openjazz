@@ -115,10 +115,6 @@ void Setup::load (int* videoW, int* videoH, bool* fullscreen, int* videoScale) {
 #ifndef FULLSCREEN_ONLY
 	*fullscreen = count & 1;
 #endif
-#ifdef SCALE
-	if (count >= 10) count = 2;
-	*videoScale = count >> 1;
-#endif
 
 
 	// Read controls
@@ -216,11 +212,7 @@ void Setup::save () {
 	// Write video settings
 	file->storeShort(video.getWidth());
 	file->storeShort(video.getHeight());
-#ifdef SCALE
-	videoScale = video.getScaleFactor();
-#else
 	videoScale = 1;
-#endif
 	videoScale <<= 1;
 #ifndef FULLSCREEN_ONLY
 	videoScale |= video.isFullscreen()? 1: 0;

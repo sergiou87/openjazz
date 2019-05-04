@@ -85,9 +85,6 @@ class SetupMenu : public Menu {
 		int setupKeyboard   ();
 		int setupJoystick   ();
 		int setupResolution ();
-#ifdef SCALE
-		int setupScaling    ();
-#endif
 		int setupSound      ();
 
 	public:

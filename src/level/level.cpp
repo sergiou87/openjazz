@@ -228,28 +228,13 @@ void Level::drawOverlay (unsigned char bg, bool menu, int option,
 
 	if (stats & S_SCREEN) {
 
-#ifdef SCALE
-		if (video.getScaleFactor() > 1)
-			drawRect(canvasW - 84, 11, 80, 37, bg);
-		else
-#endif
-			drawRect(canvasW - 84, 11, 80, 25, bg);
+		drawRect(canvasW - 84, 11, 80, 25, bg);
 
 		panelBigFont->showNumber(video.getWidth(), canvasW - 52, 14);
 		panelBigFont->showString("x", canvasW - 48, 14);
 		panelBigFont->showNumber(video.getHeight(), canvasW - 12, 14);
 		panelBigFont->showString("fps", canvasW - 76, 26);
 		panelBigFont->showNumber((int)smoothfps, canvasW - 12, 26);
-
-#ifdef SCALE
-		if (video.getScaleFactor() > 1) {
-
-			panelBigFont->showNumber(canvasW, canvasW - 52, 38);
-			panelBigFont->showString("x", canvasW - 48, 39);
-			panelBigFont->showNumber(canvasH, canvasW - 12, 38);
-
-		}
-#endif
 
 	}
 

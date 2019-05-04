@@ -454,79 +454,6 @@ int SetupMenu::setupResolution () {
 }
 
 
-#ifdef SCALE
-/**
- * Run the scaling setup menu.
- *
- * @return Error code
- */
-int SetupMenu::setupScaling () {
-
-	int scaleFactor, x, y;
-
-	scaleFactor = video.getScaleFactor();
-
-	if ( scaleFactor < MIN_SCALE || scaleFactor > MAX_SCALE )
-		scaleFactor = 1;
-
-	while (true) {
-
-		if (loop(NORMAL_LOOP) == E_QUIT) return E_QUIT;
-
-		if (controls.release(C_ESCAPE)) return E_NONE;
-
-		if (controls.release(C_ENTER)) return E_NONE;
-
-		if (controls.getCursor(x, y) &&
-			(x >= 32) && (x < 132) && (y >= canvasH - 12) &&
-			controls.wasCursorReleased()) return E_NONE;
-
-		SDL_Delay(T_MENU_FRAME);
-
-		video.clearScreen(0);
-
-
-		// Show screen corners
-		drawRect(0, 0, 32, 32, 79);
-		drawRect(canvasW - 32, 0, 32, 32, 79);
-		drawRect(canvasW - 32, canvasH - 32, 32, 32, 79);
-		drawRect(0, canvasH - 32, 32, 32, 79);
-
-
-
-		fontmn2->mapPalette(240, 8, 114, 16);
-
-		// Scale
-		fontmn2->showNumber(video.getScaleFactor(), (canvasW >> 2) + 32, canvasH >> 1);
-
-		// X
-		fontmn2->showString("x", (canvasW >> 2) + 40, canvasH >> 1);
-
-		fontmn2->restorePalette();
-
-
-		if ((controls.release(C_DOWN) || controls.release(C_LEFT)) && (scaleFactor > MIN_SCALE)) scaleFactor--;
-
-		if ((controls.release(C_UP) || controls.release(C_RIGHT)) && (scaleFactor < MAX_SCALE)) scaleFactor++;
-
-		// Check for a scaling change
-		if (scaleFactor != video.getScaleFactor()) {
-
-			playSound(S_ORB);
-			scaleFactor = video.setScaleFactor(scaleFactor);
-
-		}
-
-		fontbig->showString(ESCAPE_STRING, 35, canvasH - 12);
-
-	}
-
-	return E_NONE;
-
-}
-#endif
-
-
 /**
  * Run the audio setup menu.
  *
@@ -713,11 +640,7 @@ int SetupMenu::setupMain () {
 
 			case 4:
 
-#ifdef SCALE
-				if (setupScaling() == E_QUIT) return E_QUIT;
-#else
 				if (message("FEATURE NOT AVAILABLE") == E_QUIT) return E_QUIT;
-#endif
 
 				break;
 

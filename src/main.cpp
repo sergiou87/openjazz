@@ -253,10 +253,6 @@ void startUp (int argc, char *argv[]) {
 
 	}
 
-#ifdef SCALE
-	video.setScaleFactor(scaleFactor);
-#endif
-
 
 	if (SDL_NumJoysticks() > 0) SDL_JoystickOpen(0);
 
@@ -376,10 +372,6 @@ void shutDown () {
 	delete fontiny;
 	delete fontmn1;
 	delete fontmn2;
-
-#ifdef SCALE
-	if (video.getScaleFactor() > 1) SDL_FreeSurface(canvas);
-#endif
 
 	closeAudio();
 

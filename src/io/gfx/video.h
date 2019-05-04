@@ -34,11 +34,7 @@
 #define SH 200
 
 #define MIN_SCALE 1
-#ifdef SCALE
-	#define MAX_SCALE 4
-#else
-	#define MAX_SCALE 1
-#endif
+#define MAX_SCALE 1
 
 // Maximum screen dimensions
 #define MAX_SCREEN_WIDTH (32 * 256 * MAX_SCALE)
@@ -51,7 +47,6 @@
 	#define DEFAULT_SCREEN_HEIGHT 240
 
 	#define FULLSCREEN_ONLY
-	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_SWSURFACE | SDL_HWPALETTE)
 #elif defined(DINGOO)
@@ -59,7 +54,6 @@
 	#define DEFAULT_SCREEN_HEIGHT 240
 
 	#define FULLSCREEN_ONLY
-	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS 0
 #elif defined(PSP)
@@ -67,7 +61,6 @@
 	#define DEFAULT_SCREEN_HEIGHT 272
 
 	#define FULLSCREEN_ONLY
-	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_SWSURFACE | SDL_HWPALETTE)
 #elif defined(_3DS)
@@ -75,7 +68,6 @@
 	#define DEFAULT_SCREEN_HEIGHT 240
 
 	#define FULLSCREEN_ONLY
-	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS (SDL_SWSURFACE | SDL_TOPSCR | SDL_CONSOLEBOTTOM)
 #elif defined(WII)
@@ -83,7 +75,6 @@
 	#define DEFAULT_SCREEN_HEIGHT 480
 
 	#define FULLSCREEN_ONLY
-	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_SWSURFACE | SDL_HWPALETTE)
 #elif defined(__SWITCH__)
@@ -91,7 +82,6 @@
 	#define DEFAULT_SCREEN_HEIGHT 480
 
 	#define FULLSCREEN_ONLY
-	#define NO_RESIZE
 
 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_SWSURFACE | SDL_HWPALETTE)
 #else
@@ -125,13 +115,7 @@ class Video {
 		int          maxH; ///< Largest possible height
 		int          screenW; ///< Real width
 		int          screenH; ///< Real height
-#ifdef SCALE
-		int          scaleFactor; ///< Scaling factor
-#endif
 		bool         fullscreen; ///< Full-screen mode
-
-		void findMaxResolution ();
-		void expose            ();
 
 	public:
 		Video ();
@@ -149,10 +133,6 @@ class Video {
 		int        getMaxHeight          ();
 		int        getWidth              ();
 		int        getHeight             ();
-#ifdef SCALE
-		int        getScaleFactor        ();
-		int        setScaleFactor        (int newScaleFactor);
-#endif
 #ifndef FULLSCREEN_ONLY
 		bool       isFullscreen          ();
 #endif

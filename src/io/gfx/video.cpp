@@ -27,10 +27,6 @@
 #include "paletteeffects.h"
 #include "video.h"
 
-#ifdef SCALE
-	#include <scalebit.h>
-#endif
-
 #include "util.h"
 
 #include <string.h>
@@ -83,10 +79,6 @@ Video::Video () {
 
 	screen = NULL;
 
-#ifdef SCALE
-	scaleFactor = 1;
-#endif
-
 	// Generate the logical palette
 	for (count = 0; count < 256; count++)
 		logicalPalette[count].r = logicalPalette[count].g =
@@ -96,46 +88,6 @@ Video::Video () {
 
 	return;
 
-}
-
-
-/**
- * Find the maximum horizontal and vertical resolutions.
- */
-void Video::findMaxResolution () {
-
-#ifdef NO_RESIZE
-	maxW = DEFAULT_SCREEN_WIDTH;
-	maxH = DEFAULT_SCREEN_HEIGHT;
-#else
-	SDL_Rect **resolutions;
-	int count;
-
-	resolutions = SDL_ListModes(NULL, fullscreen? FULLSCREEN_FLAGS: WINDOWED_FLAGS);
-
-	if (resolutions == (SDL_Rect **)(-1)) {
-
-		maxW = MAX_SCREEN_WIDTH;
-		maxH = MAX_SCREEN_HEIGHT;
-
-	} else {
-
-		maxW = SW;
-		maxH = SH;
-
-		for (count = 0; resolutions[count] != NULL; count++) {
-
-			if (resolutions[count]->w > maxW) maxW = resolutions[count]->w;
-			if (resolutions[count]->h > maxH) maxH = resolutions[count]->h;
-
-		}
-
-		if (maxW > MAX_SCREEN_WIDTH) maxW = MAX_SCREEN_WIDTH;
-		if (maxH > MAX_SCREEN_HEIGHT) maxH = MAX_SCREEN_HEIGHT;
-	}
-#endif
-
-	return;
 }
 
 
@@ -158,6 +110,9 @@ bool Video::init (int width, int height, bool startFullscreen) {
 		windowFlags |= SDL_WINDOW_FULLSCREEN;
 		SDL_ShowCursor(SDL_DISABLE);
 	}
+	else {
+		windowFlags |= SDL_WINDOW_RESIZABLE;
+	}
 
 	int windowWidth = fullscreen ? 0 : width;
 	int windowHeight = fullscreen ? 0 : height;
@@ -178,8 +133,6 @@ bool Video::init (int width, int height, bool startFullscreen) {
 
 	}
 
-	findMaxResolution();
-
 	return true;
 
 }
@@ -198,10 +151,6 @@ bool Video::reset (int width, int height) {
 	screenW = width;
 	screenH = height;
 
-#ifdef SCALE
-	if (canvas != screen) SDL_FreeSurface(canvas);
-#endif
-
 	screen = SDL_CreateRGBSurface(0, width, height, 32,
                                         0x00FF0000,
                                         0x0000FF00,
@@ -210,42 +159,13 @@ bool Video::reset (int width, int height) {
 
 	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 	
-// #ifdef NO_RESIZE
-// 	screen = SDL_SetVideoMode(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 8, FULLSCREEN_FLAGS);
-// #else
 // 	screen = SDL_SetVideoMode(screenW, screenH, 8, fullscreen? FULLSCREEN_FLAGS: WINDOWED_FLAGS);
-// #endif
 
 	if (!screen) return false;
 
-
-#ifdef SCALE
-	// Check that the scale will fit in the current resolution
-	while ( ((screenW/SW < scaleFactor) || (screenH/SH < scaleFactor)) && (scaleFactor > 1) ) {
-
-		scaleFactor--;
-
-	}
-
-	if (scaleFactor > 1) {
-
-		canvasW = screenW / scaleFactor;
-		canvasH = screenH / scaleFactor;
-		canvas = createSurface(NULL, canvasW, canvasH);
-
-	} else
-#endif
-    {
-
-		canvasW = screenW;
-		canvasH = screenH;
-		canvas = screen;
-
-	}
-
-#if !defined(WIZ) && !defined(GP2X)
-	expose();
-#endif
+	canvasW = screenW;
+	canvasH = screenH;
+	canvas = screen;
 
 
 	/* A real 8-bit display is quite likely if the user has the right video
@@ -373,39 +293,6 @@ int Video::getHeight () {
 }
 
 
-#ifdef SCALE
-/**
- * Returns the current scaling factor.
- *
- * @return The scaling factor
- */
-int Video::getScaleFactor () {
-
-	return scaleFactor;
-
-}
-
-
-/**
- * Sets the scaling factor.
- *
- * @param newScaleFactor The new scaling factor
- */
-int Video::setScaleFactor (int newScaleFactor) {
-
-	if ((SW * newScaleFactor <= screenW) && (SH * newScaleFactor <= screenH)) {
-
-		scaleFactor = newScaleFactor;
-
-		if (screen) reset(screenW, screenH);
-
-	}
-
-	return scaleFactor;
-
-}
-#endif
-
 #ifndef FULLSCREEN_ONLY
 /**
  * Determines whether or not full-screen mode is being used.
@@ -421,26 +308,13 @@ bool Video::isFullscreen () {
 
 
 /**
- * Refresh display palette.
- */
-void Video::expose () {
-
-	SDL_SetPaletteColors(screen->format->palette, logicalPalette, 0, 256); // Logical
-	SDL_SetPaletteColors(screen->format->palette, currentPalette, 0, 256); // Physical
-
-	return;
-
-}
-
-
-/**
  * Update video based on a system event.
  *
  * @param event The system event. Events not affecting video will be ignored
  */
 void Video::update (SDL_Event *event) {
 
-#if !defined(FULLSCREEN_ONLY) || !defined(NO_RESIZE)
+#if !defined(FULLSCREEN_ONLY)
 	switch (event->type) {
 
 	#ifndef FULLSCREEN_ONLY
@@ -458,26 +332,10 @@ void Video::update (SDL_Event *event) {
 
 				if (!fullscreen) SDL_ShowCursor(SDL_ENABLE);
 
-				findMaxResolution();
-
 			}
 
 			break;
     #endif
-
-    #ifndef NO_RESIZE
-		case SDL_VIDEORESIZE:
-
-			reset(event->resize.w, event->resize.h);
-
-			break;
-    #endif
-
-		// case SDL_VIDEOEXPOSE:
-
-		// 	expose();
-
-		// 	break;
 
 	}
 #endif
@@ -497,18 +355,6 @@ void Video::update (SDL_Event *event) {
 void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) {
 
 	SDL_Color shownPalette[256];
-
-#ifdef SCALE
-	if (canvas != screen) {
-
-		// Copy everything that has been drawn so far
-		scale(scaleFactor,
-			screen->pixels, screen->pitch,
-			canvas->pixels, canvas->pitch,
-			screen->format->BytesPerPixel, canvas->w, canvas->h);
-
-	}
-#endif
 
 	// Apply palette effects
 	if (paletteEffects) {
@@ -535,7 +381,7 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 	}
 
 	// Show what has been drawn
-	SDL_UpdateTexture(texture, NULL, screen->pixels, screen->w * sizeof (Uint32));
+	SDL_UpdateTexture(texture, NULL, screen->pixels, screen->pitch);// screen->w * sizeof (Uint32));
 
 	SDL_RenderClear(renderer);
 
