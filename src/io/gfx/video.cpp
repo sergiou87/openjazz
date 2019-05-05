@@ -151,6 +151,8 @@ bool Video::reset (int width, int height) {
 	screenW = width;
 	screenH = height;
 
+	if (canvas != screen) SDL_FreeSurface(canvas);
+
 	screen = SDL_CreateRGBSurface(0, width, height, 32,
                                         0x00FF0000,
                                         0x0000FF00,
@@ -165,7 +167,7 @@ bool Video::reset (int width, int height) {
 
 	canvasW = screenW;
 	canvasH = screenH;
-	canvas = screen;
+	canvas = createSurface(NULL, canvasW, canvasH);
 
 
 	/* A real 8-bit display is quite likely if the user has the right video
@@ -192,10 +194,10 @@ bool Video::reset (int width, int height) {
 void Video::setPalette (SDL_Color *palette) {
 
 	// Make palette changes invisible until the next draw. Hopefully.
-	clearScreen(SDL_MapRGB(screen->format, 0, 0, 0));
+	clearScreen(SDL_MapRGB(canvas->format, 0, 0, 0));
 	flip(0);
 
-	SDL_SetPaletteColors(screen->format->palette, palette, 0, 256);
+	SDL_SetPaletteColors(canvas->format->palette, palette, 0, 256);
 	currentPalette = palette;
 
 	return;
@@ -224,7 +226,7 @@ SDL_Color* Video::getPalette () {
  */
 void Video::changePalette (SDL_Color *palette, unsigned char first, unsigned int amount) {
 
-	SDL_SetPaletteColors(screen->format->palette, palette, first, amount);
+	SDL_SetPaletteColors(canvas->format->palette, palette, first, amount);
 
 	return;
 
@@ -370,7 +372,7 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 
 			paletteEffects->apply(shownPalette, false, mspf, effectsStopped);
 
-			SDL_SetPaletteColors(screen->format->palette, shownPalette, 0, 256);
+			SDL_SetPaletteColors(canvas->format->palette, shownPalette, 0, 256);
 
 		} else {
 
@@ -381,6 +383,7 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 	}
 
 	// Show what has been drawn
+	SDL_BlitSurface(canvas, NULL, screen, NULL);
 	SDL_UpdateTexture(texture, NULL, screen->pixels, screen->pitch);// screen->w * sizeof (Uint32));
 
 	SDL_RenderClear(renderer);
